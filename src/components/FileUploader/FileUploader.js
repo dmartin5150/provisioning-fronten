@@ -1,15 +1,74 @@
-import { useState, useContext } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "../Layout/Layout";
 import classes from "./FileUploader.module.css";
 import fileContext from "../../store/file-context";
 import FileSaver from "file-saver";
 
 const FileUploader = (props) => {
-  const fileCtx = useContext(fileContext);
-  const [curFileName, setCurFileName] = useState("");
-  const [fileSelected, setFileSelected] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [fileIsSelected, setFileIsSelected] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadedCreationDate, setUploadedCreationDate]= useState("")
+  const [provisioningFileName, setProvisioningFileName] = useState("");
+  const [provisioningCreationDate, setProvisioningCreationDate]= useState("")
+  const [sourceFileName, setSourceFileName] = useState("")
   const [fileUpload, setFileUpload] = useState(false);
-  const [fileData, setFileData] = useState();
+  const selectedFileRef = useRef();
+
+
+
+
+  const setUploadFileStatus = (data) => {
+    if (data.upload.filename === ''){
+      setUploadedFileName('No file uploaded')
+    } else {
+      console.log(data.upload.filename)
+      setUploadedFileName(data.upload.filename)
+      setUploadedCreationDate(data.upload.creation_date)
+    }
+  }
+
+  const setSourceFile = (data) => {
+    if (data.source === '') {
+      setSourceFileName('Souce Data Unknown');
+    } else {
+      setSourceFileName(data.source);
+    }
+  }
+
+  const setProvisioningFileStatus = (data) => {
+    if (data.provision.filename === ''){
+      setProvisioningFileName('No provisioning file available');
+    } else {
+      console.log(data.provision.filename);
+      setProvisioningFileName(data.provision.filename);
+      setProvisioningCreationDate(data.provision.creation_date);
+      setSourceFile(data);
+
+    }
+  }
+
+  const setFileStatus = (data) => {
+    setUploadFileStatus(data);
+    setProvisioningFileStatus(data);
+  }
+
+
+  const getStatus = async()=> {
+    const response = await fetch("http://localhost:5000/currentstatus");
+    if (response) {
+      const data = await response.json()
+      setFileStatus(data)
+      console.log(data.provision.creation_date)
+      return data
+    }
+  }
+
+  useEffect(() => {
+    getStatus();
+},[])
+
+
 
   const fileSelectChangeHandler = async (event) => {
     const fileInfo = event.target.files[0];
@@ -20,14 +79,14 @@ const FileUploader = (props) => {
       alert("Must upload a .csv file");
       return;
     }
-    setFileSelected(true);
-    setFileUpload(false);
-    setCurFileName(fileName);
-    setFileData(fileInfo);
+    setSelectedFileName(fileName);
+    setFileIsSelected(true);
   };
 
   const uploadFileHandler = async (event) => {
     event.preventDefault();
+    const fileData = selectedFileRef.current.files[0];
+    console.log('filedata', fileData)
     const data = new FormData();
     data.append("file_from_react", fileData);
     data.append("filename", fileData.name);
@@ -38,8 +97,10 @@ const FileUploader = (props) => {
       });
       console.log(response);
       if (response.ok) {
-        setFileSelected(false);
+        setFileIsSelected(false);
+        selectedFileRef.current.value=null;
         setFileUpload(true);
+        getStatus();
       }
     } catch (error) {
       alert(error.message);
@@ -85,7 +146,6 @@ const FileUploader = (props) => {
   return (
     <Layout>
       <section className={classes["file-actions"]}>
-        {/* <section className={classes["file-upload"]}> */}
           <label className={classes["upload-label"]} htmlFor="inputdata">
             Select File
           </label>
@@ -95,7 +155,6 @@ const FileUploader = (props) => {
           >
             Upload File
           </button>
-        {/* </section> */}
         <button onClick={createNewSpreadsheetHandler} className={classes["selectbutton"]} disabled={!fileUpload}type="submit">
           Create New Spreadsheet
         </button>
@@ -104,16 +163,20 @@ const FileUploader = (props) => {
         </button>
       </section>
       <section>
-        {fileSelected && (
+        {fileIsSelected && 
           <p className={classes["selectedfile"]}>
-            Selected File:&nbsp;&nbsp;{curFileName}
+            Selected File:&nbsp;&nbsp;{selectedFileName}
           </p>
-        )}
-        {fileUpload && (
-          <p className={classes["selectedfile"]}>
-            Uploaded File:&nbsp;&nbsp;{curFileName}
-          </p>
-        )}
+        }
+        <p className={classes["selectedfile"]}>
+          Uploaded File:&nbsp;&nbsp;{uploadedFileName}&nbsp;&nbsp;{uploadedCreationDate}
+        </p>
+        <p className={classes["selectedfile"]}>
+          Provisioning File:&nbsp;&nbsp;{provisioningFileName}&nbsp;&nbsp;{provisioningCreationDate}
+        </p>
+        <p className={classes["selectedfile"]}>
+          Provisioning File SourceData:&nbsp;&nbsp;{sourceFileName}
+        </p>
       </section>
       <input
         onChange={fileSelectChangeHandler}
@@ -121,6 +184,7 @@ const FileUploader = (props) => {
         type="file"
         name="fname"
         id="inputdata"
+        ref={selectedFileRef}
       />
     </Layout>
   );
