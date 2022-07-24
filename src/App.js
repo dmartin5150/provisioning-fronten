@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "./components/Layout/Layout";
-import FileUploader from "./components/FileUploader/FileUploader";
+import SpreadsheetManager from "./components/SpreadsheetManager/SpreadsheetManager";
 import "./App.css";
 import { Redirect, Switch, Route } from "react-router-dom";
 import FileSaver from "file-saver";
@@ -33,7 +33,7 @@ function App() {
           </Layout>
         </Route>
         <Route path="/upload">
-          <FileUploader></FileUploader>
+          <SpreadsheetManager></SpreadsheetManager>
         </Route>
         <Route path="*">
           <Redirect to="/home"></Redirect>

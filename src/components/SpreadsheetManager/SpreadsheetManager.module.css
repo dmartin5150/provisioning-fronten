@@ -46,6 +46,11 @@
     max-height:8rem;
   }
 
+
+  .selectedfile span {
+    font-weight: normal;
+  }
+
   .selectedfile {
     font-weight:bold;
     text-align:left;
