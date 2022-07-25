@@ -1,0 +1,23 @@
+.status {
+    font-size: 1.2rem;
+    font-weight: normal;
+    text-align: center;
+    border: 1px solid blue;
+    margin: 3rem auto;
+    max-width:40rem;
+}
+
+.status p {
+    padding: 0;
+    margin: 0;
+}
+
+.status .title {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.status .filename {
+    margin-bottom:0.3rem;
+}

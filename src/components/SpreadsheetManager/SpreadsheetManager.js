@@ -5,6 +5,7 @@ import classes from "./SpreadsheetManager.module.css";
 import FileSaver from "file-saver";
 import FileUploader from "./FileUploader";
 import Backdrop from "../UI/Backdrop";
+import FileStatus from "./FileStatus";
 
 const ManageSpreadsheet = (props) => {
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -17,14 +18,15 @@ const ManageSpreadsheet = (props) => {
   const [sourceFileName, setSourceFileName] = useState("");
   const [fileIsUploaded, setFileIsUploaded] = useState(false);
   const [fileUpload, setFileUpload] = useState(false);
+  const [sourceUpdated, setSourceUpdated] = useState(false);
   const selectedFileRef = useRef();
+
 
   const setUploadFileStatus = (data) => {
     if (data.upload.filename === "") {
       setUploadedFileName("No file uploaded");
       setFileIsUploaded(false);
     } else {
-      console.log(data.upload.filename);
       setUploadedFileName(data.upload.filename);
       setUploadedCreationDate(data.upload.creation_date);
       setFileIsUploaded(true);
@@ -55,7 +57,16 @@ const ManageSpreadsheet = (props) => {
   const setFileStatus = (data) => {
     setUploadFileStatus(data);
     setProvisioningFileStatus(data);
+    console.log('file', uploadedFileName);
+    if (uploadedFileName === sourceFileName) {
+      setSourceUpdated(true);
+    } else {
+      setSourceUpdated(false);
+    }
+
   };
+
+
 
   const getStatus = async () => {
     const response = await fetch("http://localhost:5000/currentstatus");
@@ -68,6 +79,7 @@ const ManageSpreadsheet = (props) => {
   };
 
   useEffect(() => {
+    console.log('in use effect');
     getStatus();
   }, []);
 
@@ -85,7 +97,6 @@ const ManageSpreadsheet = (props) => {
   };
 
   const uploadFileHandler = async (event) => {
-    event.preventDefault();
     const fileData = selectedFileRef.current.files[0];
     const data = new FormData();
     data.append("file_from_react", fileData);
@@ -105,8 +116,6 @@ const ManageSpreadsheet = (props) => {
       alert(error.message);
     }
   };
-
-
 
   const createNewSpreadsheetHandler = async (event) => {
     try {
@@ -143,35 +152,34 @@ const ManageSpreadsheet = (props) => {
   const cancelUploadHandler = () => {
     setFileIsSelected(false);
     selectedFileRef.current.value = null;
-    console.log('cancel');
+    console.log("cancel");
   };
-
 
   const test = () => {
     console.log(test);
-  }
+  };
 
   return (
-
     <Fragment>
-      {fileIsSelected && ReactDOM.createPortal(
-        <Backdrop onClick={cancelUploadHandler} />, document.getElementById("backdrop-root")
-      )}
-      {fileIsSelected && ReactDOM.createPortal(
-            <FileUploader />
-      , document.getElementById("modal-root"))}
+      {fileIsSelected &&
+        ReactDOM.createPortal(
+          <Backdrop onClick={cancelUploadHandler} />,
+          document.getElementById("backdrop-root")
+        )}
+      {fileIsSelected &&
+        ReactDOM.createPortal(
+          <FileUploader
+            filename={uploadedFileName}
+            onCancel={cancelUploadHandler}
+            onUpload={uploadFileHandler}
+          />,
+          document.getElementById("modal-root")
+        )}
       <Layout>
         <section className={classes["file-actions"]}>
           <label className={classes["upload-label"]} htmlFor="inputdata">
             Select File
           </label>
-          <button
-            className={classes["selectbutton"]}
-            onClick={uploadFileHandler}
-            disabled={!fileIsSelected}
-          >
-            Upload File
-          </button>
           <button
             onClick={createNewSpreadsheetHandler}
             className={classes["selectbutton"]}
@@ -188,27 +196,37 @@ const ManageSpreadsheet = (props) => {
           >
             Download Spreadsheet
           </button>
+          <button
+            onClick={downloadSpreadsheetHandler}
+            className={classes["selectbutton"]}
+            type="submit"
+            disabled={!provisioningSheetExists}
+          >
+            Download Excel
+          </button>
         </section>
-        <section>
-          {fileIsSelected && (
-            <FileUploader
-              filename={uploadedFileName}
-              onCancel={cancelUploadHandler}
-            ></FileUploader>
-          )}
-          <p className={classes["selectedfile"]}>
-            <span>Uploaded File:</span>&nbsp;&nbsp;{uploadedFileName}
-            &nbsp;&nbsp;
-            {uploadedCreationDate}
-          </p>
-          <p className={classes["selectedfile"]}>
-            Provisioning File:&nbsp;&nbsp;{provisioningFileName}&nbsp;&nbsp;
-            {provisioningCreationDate}
-          </p>
-          <p className={classes["selectedfile"]}>
-            Provisioning File SourceData:&nbsp;&nbsp;{sourceFileName}
-          </p>
-        </section>
+        {/* {currentStatus.map((status)=> {
+          return  (<FileStatus
+          key={status.id}
+          title={status.title}
+          filename={status.filename}
+          creationDate={status.creationDate}
+        ></FileStatus>)
+        })} */}
+        <FileStatus
+          title={'Most Recent Uploaded File:'}
+          filename={uploadedFileName}
+          creationDate={uploadedCreationDate}
+        ></FileStatus>
+        <FileStatus
+          title={'Most Recent Provisioning File:'}
+          filename={provisioningFileName}
+          creationDate={provisioningCreationDate}
+        ></FileStatus>
+        <FileStatus
+          title={'Source for Provisioning File:'}
+          filename={sourceFileName}
+        ></FileStatus>
         <input
           onChange={fileSelectChangeHandler}
           className={classes.inputdata}
@@ -218,6 +236,7 @@ const ManageSpreadsheet = (props) => {
           ref={selectedFileRef}
         />
       </Layout>
+      {!sourceUpdated && <p className={classes.warning}>Provisiong Document Not updated with most recent file upload</p>}
     </Fragment>
   );
 };
