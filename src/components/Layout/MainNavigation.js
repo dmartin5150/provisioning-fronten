@@ -20,7 +20,7 @@ const MainNavigation = () => {
         </Link>
         <nav>
         <Link to="/upload">
-          <div className={classes.logo}><button>Select File For Upload</button></div>
+          <div className={classes.logo}><button>Manage Spreadsheet</button></div>
         </Link>
       </nav>
     </header>

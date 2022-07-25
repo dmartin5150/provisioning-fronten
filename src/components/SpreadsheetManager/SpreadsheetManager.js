@@ -1,19 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
+import ReactDOM from "react-dom";
 import Layout from "../Layout/Layout";
 import classes from "./SpreadsheetManager.module.css";
 import FileSaver from "file-saver";
 import FileUploader from "./FileUploader";
+import Backdrop from "../UI/Backdrop";
 
 const ManageSpreadsheet = (props) => {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [fileIsSelected, setFileIsSelected] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
-  const [fileIsUploaded, setFileIsUploaded] = useState(false);
   const [uploadedCreationDate, setUploadedCreationDate] = useState("");
   const [provisioningFileName, setProvisioningFileName] = useState("");
   const [provisioningCreationDate, setProvisioningCreationDate] = useState("");
   const [provisioningSheetExists, setProvisioningSheetExists] = useState(false);
   const [sourceFileName, setSourceFileName] = useState("");
+  const [fileIsUploaded, setFileIsUploaded] = useState(false);
   const [fileUpload, setFileUpload] = useState(false);
   const selectedFileRef = useRef();
 
@@ -85,7 +87,6 @@ const ManageSpreadsheet = (props) => {
   const uploadFileHandler = async (event) => {
     event.preventDefault();
     const fileData = selectedFileRef.current.files[0];
-    console.log("filedata", fileData);
     const data = new FormData();
     data.append("file_from_react", fileData);
     data.append("filename", fileData.name);
@@ -94,7 +95,6 @@ const ManageSpreadsheet = (props) => {
         method: "POST",
         body: data,
       });
-      console.log(response);
       if (response.ok) {
         setFileIsSelected(false);
         selectedFileRef.current.value = null;
@@ -105,6 +105,8 @@ const ManageSpreadsheet = (props) => {
       alert(error.message);
     }
   };
+
+
 
   const createNewSpreadsheetHandler = async (event) => {
     try {
@@ -138,64 +140,85 @@ const ManageSpreadsheet = (props) => {
     }
   };
 
+  const cancelUploadHandler = () => {
+    setFileIsSelected(false);
+    selectedFileRef.current.value = null;
+    console.log('cancel');
+  };
+
+
+  const test = () => {
+    console.log(test);
+  }
+
   return (
-    <Layout>
-      <section className={classes["file-actions"]}>
-        <label className={classes["upload-label"]} htmlFor="inputdata">
-          Select File
-        </label>
-        <button
-          className={classes["selectbutton"]}
-          onClick={uploadFileHandler}
-          disabled={!fileIsSelected}
-        >
-          Upload File
-        </button>
-        <button
-          onClick={createNewSpreadsheetHandler}
-          className={classes["selectbutton"]}
-          disabled={!fileUpload}
-          type="submit"
-        >
-          Create New Spreadsheet
-        </button>
-        <button
-          onClick={downloadSpreadsheetHandler}
-          className={classes["selectbutton"]}
-          type="submit"
-          disabled={!provisioningSheetExists}
-        >
-          Download Spreadsheet
-        </button>
-      </section>
-      <section>
-        <FileUploader></FileUploader>
-        {fileIsSelected && (
+
+    <Fragment>
+      {fileIsSelected && ReactDOM.createPortal(
+        <Backdrop onClick={cancelUploadHandler} />, document.getElementById("backdrop-root")
+      )}
+      {fileIsSelected && ReactDOM.createPortal(
+            <FileUploader />
+      , document.getElementById("modal-root"))}
+      <Layout>
+        <section className={classes["file-actions"]}>
+          <label className={classes["upload-label"]} htmlFor="inputdata">
+            Select File
+          </label>
+          <button
+            className={classes["selectbutton"]}
+            onClick={uploadFileHandler}
+            disabled={!fileIsSelected}
+          >
+            Upload File
+          </button>
+          <button
+            onClick={createNewSpreadsheetHandler}
+            className={classes["selectbutton"]}
+            disabled={!fileUpload}
+            type="submit"
+          >
+            Create New Spreadsheet
+          </button>
+          <button
+            onClick={downloadSpreadsheetHandler}
+            className={classes["selectbutton"]}
+            type="submit"
+            disabled={!provisioningSheetExists}
+          >
+            Download Spreadsheet
+          </button>
+        </section>
+        <section>
+          {fileIsSelected && (
+            <FileUploader
+              filename={uploadedFileName}
+              onCancel={cancelUploadHandler}
+            ></FileUploader>
+          )}
           <p className={classes["selectedfile"]}>
-            Selected File:&nbsp;&nbsp;{selectedFileName}
+            <span>Uploaded File:</span>&nbsp;&nbsp;{uploadedFileName}
+            &nbsp;&nbsp;
+            {uploadedCreationDate}
           </p>
-        )}
-        <p className={classes["selectedfile"]}>
-          <span>Uploaded File:</span>&nbsp;&nbsp;{uploadedFileName}&nbsp;&nbsp;
-          {uploadedCreationDate}
-        </p>
-        <p className={classes["selectedfile"]}>
-          Provisioning File:&nbsp;&nbsp;{provisioningFileName}&nbsp;&nbsp;
-          {provisioningCreationDate}
-        </p>
-        <p className={classes["selectedfile"]}>
-          Provisioning File SourceData:&nbsp;&nbsp;{sourceFileName}
-        </p>
-      </section>
-      <input
-        onChange={fileSelectChangeHandler}
-        className={classes.inputdata}
-        type="file"
-        name="fname"
-        id="inputdata"
-        ref={selectedFileRef}
-      />
-    </Layout>
+          <p className={classes["selectedfile"]}>
+            Provisioning File:&nbsp;&nbsp;{provisioningFileName}&nbsp;&nbsp;
+            {provisioningCreationDate}
+          </p>
+          <p className={classes["selectedfile"]}>
+            Provisioning File SourceData:&nbsp;&nbsp;{sourceFileName}
+          </p>
+        </section>
+        <input
+          onChange={fileSelectChangeHandler}
+          className={classes.inputdata}
+          type="file"
+          name="fname"
+          id="inputdata"
+          ref={selectedFileRef}
+        />
+      </Layout>
+    </Fragment>
   );
 };
 export default ManageSpreadsheet;

@@ -3,7 +3,6 @@ import Layout from "./components/Layout/Layout";
 import SpreadsheetManager from "./components/SpreadsheetManager/SpreadsheetManager";
 import "./App.css";
 import { Redirect, Switch, Route } from "react-router-dom";
-import FileSaver from "file-saver";
 
 function App() {
   const [resFromFlask, setResFromFlask] = useState("No Response");
