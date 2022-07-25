@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from "react";
-import ReactDOM from "react-dom";
+import ReactDOM, { unstable_batchedUpdates } from "react-dom";
 import Layout from "../Layout/Layout";
 import classes from "./SpreadsheetManager.module.css";
 import FileSaver from "file-saver";
@@ -19,6 +19,7 @@ const ManageSpreadsheet = (props) => {
   const [fileIsUploaded, setFileIsUploaded] = useState(false);
   const [fileUpload, setFileUpload] = useState(false);
   const [sourceUpdated, setSourceUpdated] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState([]);
   const selectedFileRef = useRef();
 
 
@@ -69,10 +70,11 @@ const ManageSpreadsheet = (props) => {
 
 
   const getStatus = async () => {
+    let status = [];
     const response = await fetch("http://localhost:5000/currentstatus");
     if (response) {
       const data = await response.json();
-      setFileStatus(data);
+      setFileStatus(data, status);
       console.log(data.provision.creation_date);
       return data;
     }
@@ -82,6 +84,29 @@ const ManageSpreadsheet = (props) => {
     console.log('in use effect');
     getStatus();
   }, []);
+
+  useEffect(()=> {
+    let status = [{
+      id:'s1',
+      title:'Most Recent Uploaded File:',
+      filename: uploadedFileName,
+      creationDate: uploadedCreationDate
+    },
+    {
+      id:'s2',
+      title:'Provisioning File',
+      filename: provisioningFileName,
+      creationDate: provisioningCreationDate         
+    },
+    {
+      id: 's3',
+      title: 'Source for Provisioning File:',
+      filename:sourceFileName,
+      creationDate:''
+    }]
+    setCurrentStatus(status);
+
+  },[uploadedFileName, uploadedCreationDate,provisioningFileName,provisioningCreationDate,sourceFileName])
 
   const fileSelectChangeHandler = async (event) => {
     const fileInfo = event.target.files[0];
@@ -205,28 +230,14 @@ const ManageSpreadsheet = (props) => {
             Download Excel
           </button>
         </section>
-        {/* {currentStatus.map((status)=> {
+        {currentStatus.map((status)=> {
           return  (<FileStatus
           key={status.id}
           title={status.title}
           filename={status.filename}
           creationDate={status.creationDate}
         ></FileStatus>)
-        })} */}
-        <FileStatus
-          title={'Most Recent Uploaded File:'}
-          filename={uploadedFileName}
-          creationDate={uploadedCreationDate}
-        ></FileStatus>
-        <FileStatus
-          title={'Most Recent Provisioning File:'}
-          filename={provisioningFileName}
-          creationDate={provisioningCreationDate}
-        ></FileStatus>
-        <FileStatus
-          title={'Source for Provisioning File:'}
-          filename={sourceFileName}
-        ></FileStatus>
+        })}
         <input
           onChange={fileSelectChangeHandler}
           className={classes.inputdata}
