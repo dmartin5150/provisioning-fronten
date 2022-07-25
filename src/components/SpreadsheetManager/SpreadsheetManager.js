@@ -55,15 +55,18 @@ const ManageSpreadsheet = (props) => {
     }
   };
 
-  const setFileStatus = (data) => {
-    setUploadFileStatus(data);
-    setProvisioningFileStatus(data);
-    console.log('file', uploadedFileName);
+  useEffect(()=> {
     if (uploadedFileName === sourceFileName) {
       setSourceUpdated(true);
     } else {
       setSourceUpdated(false);
     }
+  }, [uploadedFileName,sourceFileName])
+
+  const setFileStatus = (data) => {
+    setUploadFileStatus(data);
+    setProvisioningFileStatus(data);
+    console.log('file', uploadedFileName);
 
   };
 
@@ -121,7 +124,44 @@ const ManageSpreadsheet = (props) => {
     setFileIsSelected(true);
   };
 
-  const uploadFileHandler = async (event) => {
+
+  const downloadSpreadsheetHandler = async () => {
+    const response = await fetch("http://localhost:5000/provisioningCSV");
+    if (response.ok) {
+      const data = await response.blob({ type: "text/csv;charset=utf-8;" });
+      FileSaver.saveAs(data, "CSProvisioning.csv");
+      return response.ok
+    } else {
+      if (response.status === 404) {
+        throw new Error("Unable to find provisioning file");
+      } else {
+        throw new Error("Server Error");
+      }
+      return false;
+    }
+  };
+
+  const createNewSpreadsheetHandler = async (event) => {
+    try {
+      const response = await fetch("http://localhost:5000/spreadsheet");
+      if (response.ok) {
+        const data = await response.json();
+        getStatus();
+        return response.ok
+      } else {
+        if (response.status === 404) {
+          throw new Error("Unable to find provisioning file");
+        } else {
+          throw new Error("Server Error");
+        }
+      }
+    } catch (error) {
+      alert(error.message);
+      return false;
+    }
+  };
+
+  const uploadFileHandler = async () => {
     const fileData = selectedFileRef.current.files[0];
     const data = new FormData();
     data.append("file_from_react", fileData);
@@ -136,43 +176,32 @@ const ManageSpreadsheet = (props) => {
         selectedFileRef.current.value = null;
         setFileUpload(true);
         getStatus();
-      }
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  const createNewSpreadsheetHandler = async (event) => {
-    try {
-      const response = await fetch("http://localhost:5000/spreadsheet");
-      if (response.ok) {
-        const data = await response.json();
-        getStatus();
+        return response.ok
       } else {
         if (response.status === 404) {
-          throw new Error("Unable to find provisioning file");
+          throw new Error("Unable to upload file");
         } else {
           throw new Error("Server Error");
         }
       }
     } catch (error) {
       alert(error.message);
+      return false;
     }
   };
 
-  const downloadSpreadsheetHandler = async () => {
-    const response = await fetch("http://localhost:5000/provisioningCSV");
-    if (response.ok) {
-      const data = await response.blob({ type: "text/csv;charset=utf-8;" });
-      FileSaver.saveAs(data, "CSProvisioning.csv");
-    } else {
-      if (response.status === 404) {
-        throw new Error("Unable to find provisioning file");
-      } else {
-        throw new Error("Server Error");
+  const processUploadedFileHandler = async () => {
+    if (await uploadFileHandler()){
+      if(await createNewSpreadsheetHandler()) {
+        await downloadSpreadsheetHandler();
       }
     }
-  };
+    selectedFileRef.current.value = null;
+    getStatus();
+  }
+
+
+
 
   const cancelUploadHandler = () => {
     setFileIsSelected(false);
@@ -180,9 +209,6 @@ const ManageSpreadsheet = (props) => {
     console.log("cancel");
   };
 
-  const test = () => {
-    console.log(test);
-  };
 
   return (
     <Fragment>
@@ -194,9 +220,9 @@ const ManageSpreadsheet = (props) => {
       {fileIsSelected &&
         ReactDOM.createPortal(
           <FileUploader
-            filename={uploadedFileName}
+            filename={selectedFileName}
             onCancel={cancelUploadHandler}
-            onUpload={uploadFileHandler}
+            onUpload={processUploadedFileHandler}
           />,
           document.getElementById("modal-root")
         )}
@@ -205,14 +231,14 @@ const ManageSpreadsheet = (props) => {
           <label className={classes["upload-label"]} htmlFor="inputdata">
             Select File
           </label>
-          <button
+          {/* <button
             onClick={createNewSpreadsheetHandler}
             className={classes["selectbutton"]}
             disabled={!fileUpload}
             type="submit"
           >
             Create New Spreadsheet
-          </button>
+          </button> */}
           <button
             onClick={downloadSpreadsheetHandler}
             className={classes["selectbutton"]}
