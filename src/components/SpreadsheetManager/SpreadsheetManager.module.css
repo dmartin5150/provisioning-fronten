@@ -66,8 +66,8 @@
   .upload-label:active,
   .selectbutton:hover,
   .selectbutton:active {
-    background-color: #c291e2;
-    color: #06015c;
+    background-color: #223193;
+    color: white;
   }
 
   .warning {
