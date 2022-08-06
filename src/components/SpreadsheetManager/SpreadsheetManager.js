@@ -126,7 +126,8 @@ const ManageSpreadsheet = (props) => {
 
 
   const downloadSpreadsheetHandler = async () => {
-    const response = await fetch("http://localhost:5000/provisioningCSV");
+    const time = new Date().getTime();
+    const response = await fetch(`http://localhost:5000/provisioningCSV?time=${time}`);
     if (response.ok) {
       const data = await response.blob({ type: "text/csv;charset=utf-8;" });
       FileSaver.saveAs(data, "CSProvisioning.csv");
