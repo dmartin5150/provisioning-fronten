@@ -126,6 +126,7 @@ const ManageSpreadsheet = (props) => {
 
 
   const downloadSpreadsheetHandler = async () => {
+    //Added time query parameter to make sure browser doesn't cache file
     const time = new Date().getTime();
     const response = await fetch(`http://localhost:5000/provisioningCSV?time=${time}`);
     if (response.ok) {
